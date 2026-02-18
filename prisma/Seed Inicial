@@ -1,0 +1,27 @@
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
+
+async function main() {
+  // Crear usuarios de ejemplo
+  await prisma.user.createMany({
+    data: [
+      { email: 'admin@example.com', name: 'Admin', role: 'ADMIN' },
+      { email: 'player1@example.com', name: 'Player 1', role: 'PLAYER' },
+    ],
+  });
+
+  // Crear jugadores ficticios
+  await prisma.player.createMany({
+    data: [
+      { name: 'Juan Pérez', nickname: 'Juanito', position: 'Delantero', foot: 'right', rating: 4 },
+      { name: 'María García', nickname: 'Mari', position: 'Defensa', foot: 'left', rating: 3 },
+      { name: 'Carlos López', nickname: 'Carlitos', position: 'Mediocampista', foot: 'both', rating: 5 },
+      // Agrega más si quieres
+    ],
+  });
+}
+
+main()
+  .catch((e) => console.error(e))
+  .finally(async () => await prisma.disconnect());
