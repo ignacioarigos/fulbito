@@ -1,0 +1,120 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  role      Role     @default(PLAYER)
+  createdAt DateTime @default(now())
+}
+
+enum Role {
+  ADMIN
+  PLAYER
+}
+
+model Player {
+  id        String   @id @default(cuid())
+  name      String
+  nickname  String?
+  position  String?
+  photo     String?
+  foot      String?  // "left", "right", "both"
+  active    Boolean  @default(true)
+  rating    Int?     @default(3) // 1-5 for balancing
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  attendances Attendance[]
+  teamPlayers TeamPlayer[]
+  incidents   Incident[]
+}
+
+model Match {
+  id          String      @id @default(cuid())
+  date        DateTime
+  location    String      @default("Campo habitual")
+  format      String      @default("5v5") // "5v5", "6v6", "7v7"
+  duration    Int         @default(90) // minutes
+  notes       String?
+  status      MatchStatus @default(SCHEDULED)
+  teamAScore  Int?
+  teamBScore  Int?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  attendances Attendance[]
+  teams       Team[]
+  incidents   Incident[]
+}
+
+enum MatchStatus {
+  SCHEDULED
+  PLAYED
+  SUSPENDED
+}
+
+model Attendance {
+  id       String           @id @default(cuid())
+  matchId  String
+  playerId String
+  status   AttendanceStatus
+
+  match  Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([matchId, playerId])
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  DOUBTFUL
+}
+
+model Team {
+  id      String @id @default(cuid())
+  matchId String
+  name    String // "A" or "B"
+
+  match       Match       @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  teamPlayers TeamPlayer[]
+}
+
+model TeamPlayer {
+  id       String @id @default(cuid())
+  teamId   String
+  playerId String
+
+  team   Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, playerId])
+}
+
+model Incident {
+  id          String      @id @default(cuid())
+  matchId     String
+  playerId    String
+  type        IncidentType
+  description String?
+
+  match  Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+}
+
+enum IncidentType {
+  GOAL
+  ASSIST
+  CARD_YELLOW
+  CARD_RED
+  INJURY
+  GOALAZO
+}
